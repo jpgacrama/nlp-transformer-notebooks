@@ -13,8 +13,28 @@ from IPython.display import set_matplotlib_formats
 # TODO: Consider adding SageMaker StudioLab
 is_colab = "google.colab" in sys.modules
 is_kaggle = "kaggle_secrets" in sys.modules
-is_gpu_available = torch.cuda.is_available()
 
+# For CUDA GPU
+def check_gpu():
+    is_gpu_available = False
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        is_gpu_available = True
+        print("Using CUDA GPU.")
+    # Check that MPS is available
+    elif not torch.backends.mps.is_available():
+        if not torch.backends.mps.is_built():
+            print("MPS not available because the current PyTorch install was not "
+                "built with MPS enabled.")
+        else:
+            print("MPS not available because the current MacOS version is not 12.3+ "
+                "and/or you do not have an MPS-enabled device on this machine.")
+
+    else:
+        mps_device = torch.device("mps")
+        is_gpu_available = True
+
+    return is_gpu_available
 
 def install_mpl_fonts():
     font_dir = ["./orm_fonts/"]
@@ -35,6 +55,7 @@ def display_library_version(library):
 
 def setup_chapter():
     # Check if we have a GPU
+    is_gpu_available = check_gpu()
     if not is_gpu_available:
         print("No GPU was detected! This notebook can be *very* slow without a GPU 🐢")
         if is_colab:
